@@ -64,4 +64,6 @@ class MovingDrawObject : public DrawObject
     virtual void moveItself ();
 };
 
-class Human
+class Human {
+
+}
