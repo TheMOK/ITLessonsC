@@ -75,18 +75,16 @@ class Human : public MovingDrawObject
         MovingDrawObject(x, y, dx, dy),
         stepWidth_ (sw)
         {}
-
+        
     public:
-    int getStepWidth ()
+    int getStepWidth () 
         {
         return stepWidth;
         }
-
+        
     public:
-    void draw
+    void draw 
         {
-        txDrawLine(x, y, x, y + 200);
-
-        txDrawLine(x, y + 100, X + stepWidth
+        txDrawLine(x, y, x, )
         }
     }
