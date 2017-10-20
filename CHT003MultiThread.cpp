@@ -1,7 +1,8 @@
 #include <txlib.h>
 
-int const ARR_LENGTH = 250, DEMO_ARR_LENGTH = 100, BORDER_HEIGHT = 50, BORDER_WIDTH = 50, ARR_HEIGHT = 500, ARR_WIDTH = 500;
+int const ARR_LENGTH = 250, DEMO_ARR_LENGTH = 50, BORDER_HEIGHT = 50, BORDER_WIDTH = 50, ARR_HEIGHT = 500, ARR_WIDTH = 500;
 int GSwaps = 0;
+CRITICAL_SECTION draw, stickThreadCriticalSection, graphicThreadCriticalSection;
 
 void qwickSort(int arr[], int arrSize, bool show);
 void reallyQwickSort(int[], int, int, bool);
@@ -11,39 +12,54 @@ void printArr(int arr[], int left, int right, int bearing);
 void randomFill(int arr[], int arrSize);
 
 void stickThread(void* param) {
+    EnterCriticalSection(&stickThreadCriticalSection);
     void(*paramSort)(int arr[], int arrSize, bool show);
     paramSort = (void(*)(int[], int, bool)) param;
     int arr[DEMO_ARR_LENGTH];
     randomFill(arr, DEMO_ARR_LENGTH);
     paramSort(arr, DEMO_ARR_LENGTH, true);
+    LeaveCriticalSection(&stickThreadCriticalSection);
 }
 
 void graphicThread(void* param) {
+    EnterCriticalSection(&graphicThreadCriticalSection);
     void(*paramSort)(int arr[], int arrSize, bool show);
     paramSort = (void(*)(int[], int, bool)) param;
     int arr[ARR_LENGTH];
     randomFill(arr, ARR_LENGTH);
-    txBegin();
+    EnterCriticalSection(&draw);
     txSetFillColor(RGB(0, 0, 0));
     txRectangle(BORDER_WIDTH * 3 + ARR_WIDTH, BORDER_HEIGHT, BORDER_WIDTH * 3 + ARR_WIDTH * 2, BORDER_HEIGHT + ARR_HEIGHT);
-    txSetFillColor(RGB(255, 255, 255));
+    //txRedrawWindow();
+    LeaveCriticalSection(&draw);
     int pGSwaps = 0;
     for(int i = 1; i < ARR_LENGTH; i++) {
         paramSort(arr, i, false);
-        printf("%d\n", GSwaps);
+        EnterCriticalSection(&draw);
+        txSetFillColor(RGB(255, 255, 255));
         txLine(3 * BORDER_WIDTH + ARR_WIDTH + i * ARR_WIDTH / ARR_LENGTH, BORDER_HEIGHT + ARR_HEIGHT - GSwaps, 3 * BORDER_WIDTH + ARR_WIDTH + (i - 1) * ARR_WIDTH / ARR_LENGTH, BORDER_HEIGHT + ARR_HEIGHT - pGSwaps);
+        //txRedrawWindow();
+        LeaveCriticalSection(&draw);
         pGSwaps = GSwaps;
         GSwaps = 0;
-        txSleep(50);
+        txSleep(1);
     }
-    txEnd();
+    LeaveCriticalSection(&graphicThreadCriticalSection);
 }
 
 int main () {
     srand(time(NULL));
+    //txUpdateWindow(false);
+    txBegin();
+    InitializeCriticalSection(&draw);
+    InitializeCriticalSection(&stickThreadCriticalSection);
+    InitializeCriticalSection(&graphicThreadCriticalSection);
     txCreateWindow(4 * BORDER_WIDTH + 2 * ARR_WIDTH, 2 * BORDER_HEIGHT + ARR_HEIGHT);
     _beginthread(stickThread, 0, (void*)&qwickSort);
     _beginthread(graphicThread, 0, (void*)&qwickSort);
+    txSleep(1000);
+    EnterCriticalSection(&stickThreadCriticalSection);
+    EnterCriticalSection(&graphicThreadCriticalSection);
     return 0;
 }
 
@@ -82,7 +98,7 @@ void mswap(int arr[], int left, int right, int bearing) {
 }
 
 void printArr(int arr[], int left, int right, int bearing) {
-    txBegin();
+    EnterCriticalSection(&draw);
     txSetFillColor(RGB(0, 0, 0));
     txRectangle(BORDER_WIDTH, BORDER_HEIGHT, BORDER_WIDTH + ARR_WIDTH, BORDER_HEIGHT + ARR_HEIGHT);
     for(int i = 0; i < DEMO_ARR_LENGTH; i++) {
@@ -91,7 +107,9 @@ void printArr(int arr[], int left, int right, int bearing) {
         if (i == bearing) txSetFillColor(RGB(0, 255, 0));
         txRectangle(BORDER_WIDTH + i * ARR_WIDTH / DEMO_ARR_LENGTH, ARR_HEIGHT + BORDER_HEIGHT, BORDER_WIDTH + i * ARR_WIDTH / DEMO_ARR_LENGTH + ARR_WIDTH / DEMO_ARR_LENGTH, BORDER_HEIGHT + arr[i] * ARR_HEIGHT / DEMO_ARR_LENGTH);
     }
-    txEnd();
+    //txRedrawWindow();
+    LeaveCriticalSection(&draw);
+    txSleep(1);
 }
 
 void randomFill(int arr[], int arrSize) {
