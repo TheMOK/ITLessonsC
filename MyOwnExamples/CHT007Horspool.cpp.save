@@ -1,0 +1,97 @@
+//CHT007Horspool - finds a word in other word
+
+#include <stdio.h>
+#include <txlib.h>
+
+const int MOVE_ARRAY_SIZE = 256;
+
+int horspoolSearch(const char[], const char[]);
+void fillMoveArray(int[], const char[], const int);
+
+int makeMarker(char str[], int len) {
+    int marker = 0;
+    for(int i = 0; i < len; i++) marker += str[i];
+    return marker;
+}
+
+void changeMarker(int *marker, char minus, char plus) {
+    *marker -= minus;
+    *marker += plus;
+}
+
+bool checkWord(char source[], char word[], int startOffset, int wordLen) {
+    for(int i = 0; i < wordLen; i++) if(word[i] != source[i + startOffset]) return false;
+    return true;
+}
+
+int findWordSuspicious(char source[], char word[]) {
+    int sourceLen = strlen(source), wordLen = strlen(word), currentWordMarker = makeMarker(source, wordLen), hiddenWordMarker = makeMarker(word, wordLen);
+    for(int i = 0; i <= sourceLen - wordLen; i++) {
+        if(currentWordMarker == hiddenWordMarker) if (checkWord(source, word, i, wordLen)) return i;
+        changeMarker(&currentWordMarker, source[i], source[i + wordLen]);
+    }
+    return -1;
+}
+
+void randomText(char arr[], int t)
+    {
+    for(int i = 0; i < t; i++) arr[i] = rand() % 3 + 90;
+    }
+
+int main()
+    {
+//    char source[10] = {54, 54, 54, 54, 54, 54, 54, 54, 54}, word[5] = {54, 54, 54, 54};
+//    randomText(source, 6);
+//    randomText(word, 3);
+//
+//    for(int i = 0; i < 1000; i++) {
+//        if(horspoolSearch(source, word) != findWordSuspicious(source, word)) printf("%s %s\n", source, word);
+        ////else printf("”—ѕ≈’ ");
+//        randomText(source, 6);
+//        randomText(word, 3);
+//    }
+
+//    printf("%d\n", horspoolSearch("[Z[[Z[666", "[Z[6"));
+        printf("%d\n", horspoolSearch("mwewmweow", "mweow"));
+
+
+    return 0;
+    }
+
+int horspoolSearch(const char source[], const char word[])                 //        [z[[z[666
+    {                                                                      //          [z[6
+    int wordLen = strlen(word), sourceLen = strlen(source);                //
+    int moveArray[MOVE_ARRAY_SIZE] = {-1};
+
+    fillMoveArray(moveArray, word, wordLen);
+
+    for(int i = 0; ;)
+        {
+        for(int j = 0; ; j++)
+            {
+            printf("%d %d %c %c %d\n", i, j, source[i + j], word[j], moveArray[source[j + i]]);
+            if(word[j] == 0) {
+                return i;
+            }
+            if(i > sourceLen - wordLen) {
+                return -1;
+            }
+            if(source[i + j] != word[j])
+                {
+                if(j > moveArray[source[j + i]]) {printf("+\n");i += j - moveArray[source[j + i]];}
+                else {printf("-\n");i += j + 1;}
+                break;
+                }
+            }
+        }
+
+    return -4; //€ знаю, что он не будет достигнут
+    }
+
+void fillMoveArray(int moveArray[], const char word[], const int wordLen)
+    {
+    for(int i = 0; i < wordLen; i++)
+        {
+        moveArray[word[i]] = i;
+        }
+    }
